@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "deploy": ". .dev.env && wrangler deploy",
-    "dev": "wrangler dev --port 10801"
+    "dev": "wrangler dev --port 10801",
+    "test": "./test.sh"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240320.1",
