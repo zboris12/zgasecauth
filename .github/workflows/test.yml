@@ -1,0 +1,16 @@
+name: test
+on:
+  workflow_run:
+    workflows: ["deploy"]
+    types:
+      - completed
+jobs:
+  test:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./test.sh
+        env:
+          TEST_URL: ${{ secrets.TEST_URL }}
+          TEST_ACT: ${{ secrets.TEST_ACT }}

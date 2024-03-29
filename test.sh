@@ -1,24 +1,41 @@
 #!/bin/sh
 #set -x
 
-CTYP="Content-Type: application/x-www-form-urlencoded"
 COMN="-f http://localhost:10801/"
-
-curl -X PUT -H "${CTYP}" -d "adtk=sssss" -d "otpid=abcd" -d "value=hijk" ${COMN}
-RET=$?
-if [ ${RET} -ne 0 ]
+if [ -n "${TEST_URL}" ]
 then
+  COMN="-f ${TEST_URL}"
+fi
+
+ACT="randomtest"
+if [ -n "${TEST_ACT}" ]
+then
+  ACT="${TEST_ACT}"
+fi
+
+CTYP="Content-Type: application/x-www-form-urlencoded"
+
+curl -X PUT -H "${CTYP}" -d "action=${ACT}" -d "value=thisisatestdata" ${COMN}
+RET=$?
+if [ ${RET} -eq 0 ]
+then
+  echo ""
+else
   exit 1
 fi
-curl -X GET -H "${CTYP}" -d "action=randomdata" -d "otpid=abcd" ${COMN}
+curl -X GET -H "${CTYP}" -d "action=${ACT}" ${COMN}
 RET=$?
-if [ ${RET} -ne 0 ]
+if [ ${RET} -eq 0 ]
 then
+  echo ""
+else
   exit 2
 fi
-curl -X DELETE -H "${CTYP}" -d "adtk=sssss" -d "otpid=abcd" ${COMN}
+curl -X DELETE -H "${CTYP}" -d "action=${ACT}" ${COMN}
 RET=$?
-if [ ${RET} -ne 0 ]
+if [ ${RET} -eq 0 ]
 then
+  echo ""
+else
   exit 3
 fi

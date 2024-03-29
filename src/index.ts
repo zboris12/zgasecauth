@@ -40,6 +40,7 @@ const StatusCodes = {
 interface Env {
 	DB_AUTH: KVNamespace;
 	GET_DAT: string;
+	RUN_TEST: string;
 	AUTH_ENCKEY: string;
 	ADMIN_TOKEN: string;
 }
@@ -92,16 +93,19 @@ abstract class Auth {
 	private req: Request;
 	private fields: FormData | null;
 	protected env: Env;
+	protected test: boolean;
 	public constructor(req: Request, env: Env) {
 		this.req = req;
 		this.env = env;
 		this.fields = null;
+		this.test = false;
 	}
 	public async run(): Promise<Response> {
 		this.fields = await this.req.formData();
 		let resp: Response | null | void = null;
-		if (this.extraCheck()) {
-			let id = this.get("otpid");
+		this.test = (this.env.RUN_TEST == this.get("action"));
+		if (this.test || this.extraCheck()) {
+			let id = this.test ? "test" : this.get("otpid");
 			if (id) {
 				let errmsg: any = null;
 				resp = await this.doProcess(id).catch(err => {
