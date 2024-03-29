@@ -1,10 +1,10 @@
 #!/bin/sh
 #set -x
 
-COMN="-f http://localhost:10801/"
+COMN="-s -f http://localhost:10801/"
 if [ -n "${TEST_URL}" ]
 then
-  COMN="-f ${TEST_URL}"
+  COMN="-s -f ${TEST_URL}"
 fi
 
 ACT="randomtest"
