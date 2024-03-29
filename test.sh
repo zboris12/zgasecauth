@@ -15,7 +15,7 @@ fi
 
 CTYP="Content-Type: application/x-www-form-urlencoded"
 
-curl -X PUT -H "${CTYP}" -d "action=${ACT}" -d "value=thisisatestdata" ${COMN}
+curl -X PUT -H "${CTYP}" --data-urlencode "action=${ACT}" --data-urlencode "value=thisisatestdata" ${COMN}
 RET=$?
 if [ ${RET} -eq 0 ]
 then
@@ -23,7 +23,7 @@ then
 else
   exit 1
 fi
-curl -X GET -H "${CTYP}" -d "action=${ACT}" ${COMN}
+curl -X GET -H "${CTYP}" --data-urlencode "action=${ACT}" ${COMN}
 RET=$?
 if [ ${RET} -eq 0 ]
 then
@@ -31,7 +31,7 @@ then
 else
   exit 2
 fi
-curl -X DELETE -H "${CTYP}" -d "action=${ACT}" ${COMN}
+curl -X DELETE -H "${CTYP}" --data-urlencode "action=${ACT}" ${COMN}
 RET=$?
 if [ ${RET} -eq 0 ]
 then
