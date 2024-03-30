@@ -23,7 +23,7 @@ then
 else
   exit 1
 fi
-curl -X GET -H "${CTYP}" --data-urlencode "action=${ACT}" ${COMN}
+curl -X POST -H "${CTYP}" --data-urlencode "action=${ACT}" ${COMN}
 RET=$?
 if [ ${RET} -eq 0 ]
 then

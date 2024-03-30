@@ -160,7 +160,7 @@ export default {
 			case "PUT":
 				auth = new AuthPut(req, env);
 				break;
-			case "GET":
+			case "POST":
 				auth = new AuthGet(req, env);
 				break;
 			case "DELETE":
