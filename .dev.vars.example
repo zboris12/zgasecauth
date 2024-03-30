@@ -1,6 +1,8 @@
+DEBUG=true
 GET_DAT=randomdata
 RUN_TEST=randomtest
 #A simple javascript code to generate random key.
 #btoa(String.fromCharCode(...self.crypto.getRandomValues(new Uint8Array(48))))
 AUTH_ENCKEY=YWdlbnRzIGFyZSBpbnN0ZWFkIHVyZ2VkIHRvIHByb3ZpZGUgdGhlIGJlc3QgZW50
+HMAC_KEY=YWdlbnRzIGFyZSBpbnN0ZWFkIHVyZ2VkIHRvIHByb3ZpZGUgdGhlIGJlc3QgZW50
 ADMIN_TOKEN=sssss

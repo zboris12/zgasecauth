@@ -1,73 +1,19 @@
-const StatusCodes = {
-	OK: {
-		status: 200,
-		statusText: "OK",
-	},
-	NO_CONTENT: {
-		status: 204,
-		statusText: "No Content",
-	},
-	BAD_REQUEST: {
-		status: 400,
-		statusText: "Bad Request",
-	},
-	UNAUTHORIZED: {
-		status: 401,
-		statusText: "Unauthorized",
-	},
-	FORBIDDEN: {
-		status: 403,
-		statusText: "Forbidden",
-	},
-	NOT_FOUND: {
-		status: 404,
-		statusText: "Not Found",
-	},
-	METHOD_NOT_ALLOWED: {
-		status: 405,
-		statusText: "Method Not Allowed",
-	},
-	CONFLICT: {
-		status: 409,
-		statusText: "Conflict",
-	},
-	INTERNAL_SERVER_ERROR: {
-		status: 500,
-		statusText: "Internal Server Error",
-	},
-};
+import { u8arrToBase64url, base64urlToU8arr, base64ToU8arr } from "./bytesutil";
+import { StatusCodes } from "./httpconst";
 
 interface Env {
+	DEBUG: string;
 	DB_AUTH: KVNamespace;
 	GET_DAT: string;
 	RUN_TEST: string;
 	AUTH_ENCKEY: string;
+	HMAC_KEY: string;
 	ADMIN_TOKEN: string;
-}
-
-function u8arrToRaw(uarr: Uint8Array): string {
-	let ret = "";
-	let i = 0;
-	while (i < uarr.length) {
-		ret += String.fromCharCode(uarr[i]);
-		i++;
-	}
-	return ret;
-}
-function rawToU8arr(raw: string): Uint8Array {
-	let arr = new Uint8Array(raw.length);
-	let i = 0;
-	while (i < arr.length) {
-		arr[i] = raw.charCodeAt(i);
-		i++;
-	}
-	return arr;
 }
 
 async function cryptData(b64key: string, data: string, encrypt?: boolean): Promise<string> {
 	const ivlen = 16;
-	let rawkey = atob(b64key);
-	let keydat = rawToU8arr(rawkey);
+	let keydat = base64ToU8arr(b64key);
 	let aes = {
 		"name": "AES-CTR",
 		"counter": keydat.subarray(0, ivlen),
@@ -81,20 +27,34 @@ async function cryptData(b64key: string, data: string, encrypt?: boolean): Promi
 	if (encrypt) {
 		dataIn = new TextEncoder().encode(data);
 		dataOut = await crypto.subtle.encrypt(aes, cptkey, dataIn);
-		return btoa(u8arrToRaw(new Uint8Array(dataOut)));
+		return u8arrToBase64url(new Uint8Array(dataOut));
 	} else {
-		dataIn = rawToU8arr(atob(data));
+		dataIn = base64urlToU8arr(data);
 		dataOut = await crypto.subtle.decrypt(aes, cptkey, dataIn);
 		return new TextDecoder().decode(dataOut);
 	}
 }
 
+async function hmac(hkey: string, data: string): Promise<string> {
+	let algorithm = {
+		name: "HMAC",
+		hash: "SHA-256",
+	};
+	let u8key = base64ToU8arr(hkey);
+	let cptkey = await crypto.subtle.importKey("raw", u8key, algorithm, false, ["sign"]);
+	let u8data = new TextEncoder().encode(data);
+	let dataOut = await crypto.subtle.sign(algorithm.name, cptkey, u8data);
+	return u8arrToBase64url(new Uint8Array(dataOut));
+}
+
 abstract class Auth {
+	private DEBUG: boolean;
 	private req: Request;
 	private fields: FormData | null;
 	protected env: Env;
 	protected test: boolean;
 	public constructor(req: Request, env: Env) {
+		this.DEBUG = (env.DEBUG == "true");
 		this.req = req;
 		this.env = env;
 		this.fields = null;
@@ -107,6 +67,8 @@ abstract class Auth {
 		if (this.test || this.extraCheck()) {
 			let id = this.test ? "test" : this.get("otpid");
 			if (id) {
+				id = "auth_" + await hmac(this.env.HMAC_KEY, id);
+				this.logdebug({ id });
 				let errmsg: any = null;
 				resp = await this.doProcess(id).catch(err => {
 					errmsg = err;
@@ -121,6 +83,11 @@ abstract class Auth {
 			return new Response(null, StatusCodes.NOT_FOUND);
 		}
 		return resp;
+	}
+	protected logdebug(...params: any[]): void {
+		if (this.DEBUG) {
+			console.log(...params);
+		}
 	}
 	protected get(nm: string): string | null {
 		return this.fields?.get(nm) as (string | null);
@@ -154,6 +121,7 @@ class AuthPut extends AuthAdmin {
 		}
 
 		let encval = await cryptData(this.env.AUTH_ENCKEY, val, true);
+		this.logdebug({ encval });
 		await this.env.DB_AUTH.put(id, encval);
 		return new Response("Data saved.", StatusCodes.OK);
 	}
